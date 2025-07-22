@@ -8,4 +8,6 @@ build/*
 _C.*
 outputs/*
 checkpoints/*.pt
+checkpoints/*.pth
 demo/backend/checkpoints/*.pt
+demo/drone
