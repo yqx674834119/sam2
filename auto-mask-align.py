@@ -417,12 +417,12 @@ if __name__ == '__main__':
     parser.add_argument("--level",choices=['default','small','middle','large'])
     parser.add_argument("--batch_size",type=int,default=20)
     parser.add_argument("--sam1_checkpoint",type=str,default="/hpc2hdd/home/qyao951/sam2/checkpoints/sam_vit_h_4b8939.pth")
-    parser.add_argument("--sam2_checkpoint",type=str,default="/hpc2hdd/home/qyao951/sam2/checkpoints/sam2.1_hiera_large.pt")
-    parser.add_argument("--sam2_model_cfg",type=str,default="/hpc2hdd/home/qyao951/sam2/sam2/configs/sam2.1/sam2.1_hiera_l.yaml")
+    parser.add_argument("--sam2_checkpoint",type=str,default="checkpoints/sam2.1_hiera_large.pt")
+    parser.add_argument("--sam2_model_cfg",type=str,default="configs/sam2.1/sam2.1_hiera_l.yaml")
     
     parser.add_argument("--detect_stride",type=int,default=10)
     parser.add_argument("--use_other_level",type=int,default=1)
-    parser.add_argument("--postnms",type=int,default=1)
+    parser.add_argument("--postnms",type=int,default=0)
     parser.add_argument("--pred_iou_thresh",type=float,default=0.7)
     parser.add_argument("--box_nms_thresh",type=float,default=0.7)
     parser.add_argument("--stability_score_thresh",type=float,default=0.85)
@@ -459,7 +459,7 @@ if __name__ == '__main__':
         stability_score_thresh=args.stability_score_thresh, 
         crop_n_layers=1,
         crop_n_points_downscale_factor=1,
-        min_mask_region_area=100,
+        # min_mask_region_area=100,
     )
     # scan all the JPEG frame names in this directory
     frame_names = [
@@ -490,13 +490,15 @@ if __name__ == '__main__':
         orig_h, orig_w = image.shape[:2]
         if orig_h > 1080:
             logger.info("Resizing original image to 1080P...")
-            scale = 1080 / orig_h
+            scale = 512 / orig_h
             h = int(orig_h * scale)
             w = int(orig_w * scale)
             image = cv2.resize(image, (w, h))
 
         # Generate only large masks
         # masks_l = mask_generator.generate_l(image)
+        # all_masks = mask_generator.generate(image) # 使用sam1 进行分割当前帧
+        # with torch.autocast("cuda", dtype=torch.float32): # 原因 PyTorch Version: 1.13.0 版本，不支持直接转换 BFloat16 格式 // torch   2.7.0+cu118
         all_masks = mask_generator.generate(image) # 使用sam1 进行分割当前帧
         masks = all_masks[level_dict[args.level]]
         # masks_l = mask_generator.generate(image)
